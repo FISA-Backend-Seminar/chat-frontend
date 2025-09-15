@@ -1,8 +1,5 @@
-import "./App.css";
 import ChatPage from "./ChatPage";
 
-function App() {
+export default function App() {
     return <ChatPage />;
 }
-
-export default App;
