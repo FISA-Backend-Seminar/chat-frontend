@@ -72,14 +72,26 @@ export default function ChatPage() {
         ws.onmessage = (evt) => {
             try {
                 const data = JSON.parse(evt.data);
-                if (data?.error) return;
+
+                if (data?.error) {
+                    // 에러 핸들링
+                    if (data.error === "ROOM_NOT_FOUND") {
+                        alert(
+                            "존재하지 않는 방입니다. 목록에서 다른 방을 선택하거나 새로 만들어주세요."
+                        );
+                        setCurrentRoomId(""); // 선택 해제
+                    }
+                    return;
+                }
+
                 setMessages((prev) => [
                     ...prev,
                     { ...data, _ts: new Date().toISOString() },
                 ]);
-            } catch {}
+            } catch (e) {
+                console.warn("invalid message:", evt.data);
+            }
         };
-
         return () => {
             try {
                 ws.close(1000, "cleanup");
@@ -176,9 +188,9 @@ export default function ChatPage() {
                         {createError && (
                             <div style={styles.errorText}>{createError}</div>
                         )}
-                        <div style={styles.hintText}>
+                        {/* <div style={styles.hintText}>
                             * 현재 서버 구현상 이 값이 roomId로 사용돼요.
-                        </div>
+                        </div> */}
                     </div>
 
                     <div style={styles.roomList}>
@@ -316,6 +328,7 @@ const styles = {
         flexDirection: "column",
     },
     title: {
+        color: "black",
         fontSize: "28px",
         fontWeight: 700,
         padding: "20px 20px 8px",
@@ -374,6 +387,7 @@ const styles = {
         background: "transparent",
         cursor: "pointer",
         textAlign: "left",
+        color: "black",
     },
     roomItemActive: {
         background: "#f2f5ff",
