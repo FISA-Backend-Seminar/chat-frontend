@@ -156,6 +156,14 @@ export default function ChatPage() {
         }
     };
 
+    const leaveRoom = () => {
+        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+            wsRef.current.close(1000, "user left");
+        }
+        setCurrentRoomId("");
+        setMessages([]);
+    };
+
     return (
         <div style={styles.page}>
             <div style={styles.container}>
@@ -219,6 +227,19 @@ export default function ChatPage() {
 
                 {/* 우측: 채팅 영역 */}
                 <section style={styles.chatArea}>
+                    {/* 상단: 현재 방 제목 + 나가기 버튼 */}
+                    {currentRoomId && (
+                        <div style={styles.header}>
+                            <span style={styles.roomTitle}>
+                                현재 방:{" "}
+                                {rooms.find((r) => r.roomId === currentRoomId)
+                                    ?.name || currentRoomId}
+                            </span>
+                            <button style={styles.leaveBtn} onClick={leaveRoom}>
+                                나가기
+                            </button>
+                        </div>
+                    )}
                     <div style={styles.messages} ref={scrollRef}>
                         {messages.map((m, idx) => {
                             const isMine =
@@ -411,6 +432,27 @@ const styles = {
         display: "flex",
         flexDirection: "column",
         height: "100%",
+    },
+    header: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "10px 16px",
+        borderBottom: "1px solid #eee",
+        background: "#fafafa",
+    },
+    roomTitle: {
+        color: "black",
+        fontSize: "14px",
+        fontWeight: 600,
+    },
+    leaveBtn: {
+        color: "black",
+        padding: "6px 12px",
+        border: "1px solid #ddd",
+        borderRadius: "6px",
+        background: "#fff",
+        cursor: "pointer",
     },
     messages: {
         flex: 1,
