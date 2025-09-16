@@ -7,8 +7,8 @@ import axios from "axios";
  * - REST  : http://localhost:8080/chat
  * - WS    : ws://localhost:8080/ws/chat
  */
-const API_BASE = "http://localhost:8080";
-const WS_URL = "ws://localhost:8080/ws/chat";
+const API_BASE = import.meta.env.VITE_API_BASE;
+const WS_URL = API_BASE.replace(/^http/, "ws") + import.meta.env.VITE_WS_PATH; 
 
 export default function ChatPage() {
     const [rooms, setRooms] = useState([]);
@@ -165,159 +165,159 @@ export default function ChatPage() {
     };
 
     return (
-        <div style={styles.page}>
-            <div style={styles.container}>
-                {/* 좌측: 방 목록 + 방 생성 */}
-                <aside style={styles.sidebar}>
-                    <div style={styles.title}>채팅</div>
+            <div style={styles.page}>
+                <div style={styles.container}>
+                    {/* 좌측: 방 목록 + 방 생성 */}
+                    <aside style={styles.sidebar}>
+                        <div style={styles.title}>채팅</div>
 
-                    <div style={styles.createBox}>
-                        <div style={styles.createRow}>
-                            <input
-                                style={styles.createInput}
-                                placeholder="새 방 ID(또는 이름)"
-                                value={newRoomName}
-                                onChange={(e) => setNewRoomName(e.target.value)}
-                                onKeyDown={onCreateEnter}
-                            />
-                            <button
-                                style={{
-                                    ...styles.createBtn,
-                                    ...(creating || !newRoomName.trim()
-                                        ? styles.createBtnDisabled
-                                        : {}),
-                                }}
-                                onClick={createRoom}
-                                disabled={creating || !newRoomName.trim()}
-                            >
-                                만들기
-                            </button>
+                        <div style={styles.createBox}>
+                            <div style={styles.createRow}>
+                                <input
+                                    style={styles.createInput}
+                                    placeholder="새 방 ID(또는 이름)"
+                                    value={newRoomName}
+                                    onChange={(e) => setNewRoomName(e.target.value)}
+                                    onKeyDown={onCreateEnter}
+                                />
+                                <button
+                                    style={{
+                                        ...styles.createBtn,
+                                        ...(creating || !newRoomName.trim()
+                                            ? styles.createBtnDisabled
+                                            : {}),
+                                    }}
+                                    onClick={createRoom}
+                                    disabled={creating || !newRoomName.trim()}
+                                >
+                                    만들기
+                                </button>
+                            </div>
+                            {createError && (
+                                <div style={styles.errorText}>{createError}</div>
+                            )}
+                            {/* <div style={styles.hintText}>
+                                * 현재 서버 구현상 이 값이 roomId로 사용돼요.
+                            </div> */}
                         </div>
-                        {createError && (
-                            <div style={styles.errorText}>{createError}</div>
-                        )}
-                        {/* <div style={styles.hintText}>
-                            * 현재 서버 구현상 이 값이 roomId로 사용돼요.
-                        </div> */}
-                    </div>
 
-                    <div style={styles.roomList}>
-                        {rooms.map((r) => (
-                            <button
-                                key={r.roomId}
-                                onClick={() => setCurrentRoomId(r.roomId)}
-                                style={{
-                                    ...styles.roomItem,
-                                    ...(currentRoomId === r.roomId
-                                        ? styles.roomItemActive
-                                        : {}),
-                                }}
-                            >
-                                <div style={styles.avatar} />
-                                <div style={styles.roomName}>{r.name}</div>
-                            </button>
-                        ))}
-                        {rooms.length === 0 && (
-                            <div style={styles.noRoomText}>
-                                아직 방이 없어요. 위에서 새 방을 만들어보세요.
+                        <div style={styles.roomList}>
+                            {rooms.map((r) => (
+                                <button
+                                    key={r.roomId}
+                                    onClick={() => setCurrentRoomId(r.roomId)}
+                                    style={{
+                                        ...styles.roomItem,
+                                        ...(currentRoomId === r.roomId
+                                            ? styles.roomItemActive
+                                            : {}),
+                                    }}
+                                >
+                                    <div style={styles.avatar} />
+                                    <div style={styles.roomName}>{r.name}</div>
+                                </button>
+                            ))}
+                            {rooms.length === 0 && (
+                                <div style={styles.noRoomText}>
+                                    아직 방이 없어요. 위에서 새 방을 만들어보세요.
+                                </div>
+                            )}
+                        </div>
+                    </aside>
+
+                    {/* 우측: 채팅 영역 */}
+                    <section style={styles.chatArea}>
+                        {/* 상단: 현재 방 제목 + 나가기 버튼 */}
+                        {currentRoomId && (
+                            <div style={styles.header}>
+                                <span style={styles.roomTitle}>
+                                    현재 방:{" "}
+                                    {rooms.find((r) => r.roomId === currentRoomId)
+                                        ?.name || currentRoomId}
+                                </span>
+                                <button style={styles.leaveBtn} onClick={leaveRoom}>
+                                    나가기
+                                </button>
                             </div>
                         )}
-                    </div>
-                </aside>
+                        <div style={styles.messages} ref={scrollRef}>
+                            {messages.map((m, idx) => {
+                                const isMine =
+                                    m.sender === sender && m.messageType === "TALK";
+                                const isSystem = m.messageType === "ENTER";
 
-                {/* 우측: 채팅 영역 */}
-                <section style={styles.chatArea}>
-                    {/* 상단: 현재 방 제목 + 나가기 버튼 */}
-                    {currentRoomId && (
-                        <div style={styles.header}>
-                            <span style={styles.roomTitle}>
-                                현재 방:{" "}
-                                {rooms.find((r) => r.roomId === currentRoomId)
-                                    ?.name || currentRoomId}
-                            </span>
-                            <button style={styles.leaveBtn} onClick={leaveRoom}>
-                                나가기
-                            </button>
-                        </div>
-                    )}
-                    <div style={styles.messages} ref={scrollRef}>
-                        {messages.map((m, idx) => {
-                            const isMine =
-                                m.sender === sender && m.messageType === "TALK";
-                            const isSystem = m.messageType === "ENTER";
+                                if (isSystem) {
+                                    return (
+                                        <div key={idx} style={styles.systemWrap}>
+                                            <div style={styles.systemBadge}>
+                                                {m.message}
+                                            </div>
+                                        </div>
+                                    );
+                                }
 
-                            if (isSystem) {
                                 return (
-                                    <div key={idx} style={styles.systemWrap}>
-                                        <div style={styles.systemBadge}>
+                                    <div
+                                        key={idx}
+                                        style={{
+                                            ...styles.msgRow,
+                                            justifyContent: isMine
+                                                ? "flex-end"
+                                                : "flex-start",
+                                        }}
+                                    >
+                                        {!isMine && (
+                                            <div style={styles.peerBubbleMeta}>
+                                                <div style={styles.peerSender}>
+                                                    {m.sender}
+                                                </div>
+                                            </div>
+                                        )}
+                                        <div
+                                            style={{
+                                                ...styles.bubble,
+                                                ...(isMine
+                                                    ? styles.bubbleMine
+                                                    : styles.bubblePeer),
+                                            }}
+                                        >
                                             {m.message}
                                         </div>
                                     </div>
                                 );
-                            }
+                            })}
+                        </div>
 
-                            return (
-                                <div
-                                    key={idx}
-                                    style={{
-                                        ...styles.msgRow,
-                                        justifyContent: isMine
-                                            ? "flex-end"
-                                            : "flex-start",
-                                    }}
-                                >
-                                    {!isMine && (
-                                        <div style={styles.peerBubbleMeta}>
-                                            <div style={styles.peerSender}>
-                                                {m.sender}
-                                            </div>
-                                        </div>
-                                    )}
-                                    <div
-                                        style={{
-                                            ...styles.bubble,
-                                            ...(isMine
-                                                ? styles.bubbleMine
-                                                : styles.bubblePeer),
-                                        }}
-                                    >
-                                        {m.message}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-
-                    {/* 입력 바 */}
-                    <div style={styles.inputBar}>
-                        <input
-                            style={styles.input}
-                            placeholder={
-                                currentRoomId
-                                    ? "메시지를 입력해주세요"
-                                    : "왼쪽에서 방을 선택하세요"
-                            }
-                            value={messageInput}
-                            onChange={(e) => setMessageInput(e.target.value)}
-                            onKeyDown={onInputEnter}
-                            disabled={!currentRoomId}
-                        />
-                        <button
-                            style={{
-                                ...styles.sendBtn,
-                                ...(currentRoomId && messageInput.trim()
-                                    ? {}
-                                    : styles.sendBtnDisabled),
-                            }}
-                            onClick={sendMessage}
-                            disabled={!currentRoomId || !messageInput.trim()}
-                        >
-                            전송
-                        </button>
-                    </div>
-                </section>
+                        {/* 입력 바 */}
+                        <div style={styles.inputBar}>
+                            <input
+                                style={styles.input}
+                                placeholder={
+                                    currentRoomId
+                                        ? "메시지를 입력해주세요"
+                                        : "왼쪽에서 방을 선택하세요"
+                                }
+                                value={messageInput}
+                                onChange={(e) => setMessageInput(e.target.value)}
+                                onKeyDown={onInputEnter}
+                                disabled={!currentRoomId}
+                            />
+                            <button
+                                style={{
+                                    ...styles.sendBtn,
+                                    ...(currentRoomId && messageInput.trim()
+                                        ? {}
+                                        : styles.sendBtnDisabled),
+                                }}
+                                onClick={sendMessage}
+                                disabled={!currentRoomId || !messageInput.trim()}
+                            >
+                                전송
+                            </button>
+                        </div>
+                    </section>
+                </div>
             </div>
-        </div>
     );
 }
 
@@ -329,7 +329,7 @@ const styles = {
         background: "#fafafa",
         display: "flex",
         justifyContent: "center",
-        alignItems: "flex-start",
+        alignItems: "center",
         padding: "24px",
         boxSizing: "border-box",
     },
@@ -341,7 +341,7 @@ const styles = {
         borderRadius: "12px",
         overflow: "hidden",
         display: "grid",
-        gridTemplateColumns: "320px 1fr",
+        gridTemplateColumns: "320px 1fr",        
     },
     sidebar: {
         borderRight: "1px solid #eee",
